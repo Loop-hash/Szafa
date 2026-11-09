@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#F2EEE3">
+<title>Szafa</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+  <!-- główny ekran: stos kart -->
+  <section id="feed" class="screen active">
+    <button id="catBtn" class="corner tl" aria-label="Kategorie"><i class="px px-grid"></i></button>
+    <div id="pixels" class="corner tr"></div>
+    <div id="stack"></div>
+    <div id="empty" class="hidden">
+      <p class="pix big">PUSTO</p>
+      <p class="mono">nic nie pasuje do filtrów<br>albo robot jeszcze nie zebrał promocji</p>
+    </div>
+    <div id="hint" class="mono hidden"></div>
+  </section>
+
+  <!-- szafa: zapisane rzeczy -->
+  <section id="wardrobe" class="screen">
+    <header class="top"><h1 class="pix">SZAFA</h1><span id="wardCount" class="mono"></span></header>
+    <div id="wardGrid" class="grid"></div>
+    <div id="doors"><div class="door l"></div><div class="door r"></div></div>
+  </section>
+
+  <!-- ustawienia -->
+  <section id="settings" class="screen">
+    <header class="top"><h1 class="pix">USTAWIENIA</h1></header>
+    <div id="setBody"></div>
+  </section>
+
+  <!-- dolny pasek z falą -->
+  <nav id="nav">
+    <svg class="wave" viewBox="0 0 400 70" preserveAspectRatio="none"><path d="M0 22 C 60 22, 80 4, 130 4 S 170 22, 200 22 S 250 4, 290 4 S 340 22, 400 22 L400 70 L0 70 Z"/></svg>
+    <button data-go="wardrobe"><b class="circ"><i class="px px-hanger"></i></b><span>szafa</span></button>
+    <button data-go="feed" class="mid on"><b class="circ"><i class="px px-eye"></i></b><span>odkrywaj</span></button>
+    <button data-go="settings"><b class="circ"><i class="px px-gear"></i></b><span>ustawienia</span></button>
+  </nav>
+
+  <!-- warstwy -->
+  <div id="detail" class="layer"></div>
+  <div id="cats" class="layer"></div>
+  <div id="outfit" class="layer"></div>
+  <canvas id="fx"></canvas>
+  <div id="toast"></div>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

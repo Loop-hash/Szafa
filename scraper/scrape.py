@@ -23,16 +23,17 @@ TODAY = datetime.date.today().isoformat()
 # ---------- kategorie wspólne dla wszystkich sklepów ----------
 CATS = [  # (klucz, słowa w nazwie/klasie)
     ("kurtki", ["kurtk", "płaszcz", "plaszcz", "parka", "outwear", "jacket", "coat", "puffer", "bezrękaw", "kamizel"]),
+    ("koszulki", ["bluzk", "body ", "crop top", "gorset"]),
     ("bluzy", ["bluz", "sweatshirt", "hoodie"]),
     ("swetry", ["swet", "kardigan", "golf", "knit", "sweater"]),
     ("koszulki", ["t-shirt", "koszulk", "tee", "top ", "longsleeve", "polo", "tank"]),
     ("koszule", ["koszul", "shirt"]),
     ("spodnie", ["spodn", "jeans", "dżins", "jogger", "chino", "cargo", "trousers", "pants", "legginsy"]),
-    ("szorty", ["szort", "bermud", "shorts"]),
+    ("szorty", ["spodenk", "szort", "bermud", "shorts"]),
     ("sukienki", ["sukien", "dress"]),
     ("spodnice", ["spódnic", "spodnic", "skirt"]),
     ("buty", ["but", "sneaker", "trampk", "kozak", "sandał", "klapk", "shoes", "botk", "obuw"]),
-    ("dodatki", ["czap", "szalik", "rękawicz", "pasek", "torb", "plecak", "skarpet", "okular", "bizuter", "biżuter", "kapelusz", "accessor", "portfel"]),
+    ("dodatki", ["dom", "home", "czap", "szalik", "rękawicz", "pasek", "torb", "plecak", "skarpet", "okular", "bizuter", "biżuter", "kapelusz", "accessor", "portfel"]),
     ("bielizna", ["bieliz", "majtk", "bokserk", "biustonosz", "piżam", "pizam", "underwear"]),
 ]
 
@@ -86,18 +87,20 @@ def algolia(app, key, idx, params):
         raise RuntimeError(f"algolia {r.status_code}: {r.text[:200]}")
     return r.json()
 
+FACETS = ["sex", "rms_class_name", "rms_subclass_name", "color", "sizes"]
+
 def lpp_hits(app, key, idx, base):
     """Wszystkie trafienia dla filtra; Algolia daje max 1000 na zapytanie, więc dzielimy po facetach."""
     out = {}
     def run(filters, depth=0):
         first = algolia(app, key, idx, {**base, **filters, "hitsPerPage": 1000, "page": 0,
-                                        "facets": ["sex", "rms_class_name", "rms_subclass_name", "color"]})
+                                        "facets": FACETS})
         n = first.get("nbHits", 0)
-        if n <= 1000 or depth >= 3:
+        if n <= 1000 or depth >= len(FACETS):
             for h in first.get("hits", []): out[h["objectID"]] = h
             pages = min(first.get("nbPages", 1), 1)
             return n
-        facet = ["sex", "rms_class_name", "rms_subclass_name", "color"][depth]
+        facet = FACETS[depth]
         vals = (first.get("facets") or {}).get(facet, {})
         if not vals:
             for h in first.get("hits", []): out[h["objectID"]] = h
@@ -112,24 +115,25 @@ def lpp_hits(app, key, idx, base):
 def lpp_shop(code, name, page):
     app, key, idx = algolia_cfg(page)
     log(name, "algolia", idx)
-    hits, how = None, ""
+    found, how = {}, []
     attempts = [
         ("facet SALE", {"facetFilters": [["categories.lvl0:SALE", "categories.lvl0:Sale", "categories.lvl0:Wyprzedaż"]]}),
         ("typ ceny", {"filters": "NOT final_price_type:regular"}),
+        ("clearance", {"filters": "final_price_type:clearance"}),
+        ("special", {"filters": "final_price_type:special"}),
         ("promotion", {"filters": "promotion:true"}),
-        ("wszystko", {}),
     ]
     for label, base in attempts:
         try:
-            base = {"query": "", **base}
-            got, total = lpp_hits(app, key, idx, base)
+            got, total = lpp_hits(app, key, idx, {"query": "", **base})
             disc = [h for h in got if money(h.get("final_price")) < money(h.get("regular_price")) - 0.01]
-            log(f"  {label}: trafień {total}, pobrano {len(got)}, przecenionych {len(disc)}")
-            if disc:
-                hits, how = disc, label
-                break
+            new = sum(1 for h in disc if h["objectID"] not in found)
+            for h in disc: found[h["objectID"]] = h
+            log(f"  {label}: trafień {total}, pobrano {len(got)}, przecenionych {len(disc)}, nowych {new}")
+            if new: how.append(label)
         except Exception as e:
             log(f"  {label}: błąd {e}")
+    hits = list(found.values())
     items = []
     for h in hits or []:
         photos = h.get("photos") or {}
@@ -140,6 +144,8 @@ def lpp_shop(code, name, page):
             for p in (co.get("photos") or [])[:0]: pass
         if not imgs: continue
         cats = " ".join(h.get("categories_list") or [])
+        dep = (h.get("rms_department_name") or "").lower()
+        if "home" in dep or "dom" in (h.get("categories", {}).get("lvl0") or [""])[0].lower(): continue
         items.append({
             "id": f"{code}:{h.get('sku') or h['objectID']}",
             "shop": code, "brand": name,
@@ -153,7 +159,7 @@ def lpp_shop(code, name, page):
             "sizes": [str(s) for s in (h.get("sizes") or [])],
             "color": (h.get("color") or "").split(":")[0],
         })
-    log(f"  {name}: {len(items)} rzeczy ({how})")
+    log(f"  {name}: {len(items)} rzeczy ({', '.join(how)})")
     return items
 
 # ---------- Zara (JSON kategorii PROMOCJE) ----------

@@ -1,0 +1,21 @@
+{
+  "name": "szafa",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Szafa: promocje na ciuchy",
+  "scripts": {
+    "test": "node test/run.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/preferences": "8.0.1",
+    "@capacitor/share": "8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2",
+    "@fontsource/pixelify-sans": "^5.3.0"
+  },
+  "type": "module"
+}
