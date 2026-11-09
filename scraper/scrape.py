@@ -21,27 +21,35 @@ def log(*a):
 TODAY = datetime.date.today().isoformat()
 
 # ---------- kategorie wspólne dla wszystkich sklepów ----------
-CATS = [  # (klucz, słowa w nazwie/klasie)
-    ("kurtki", ["kurtk", "płaszcz", "plaszcz", "parka", "outwear", "jacket", "coat", "puffer", "bezrękaw", "kamizel"]),
-    ("koszulki", ["bluzk", "body ", "crop top", "gorset"]),
-    ("bluzy", ["bluz", "sweatshirt", "hoodie"]),
-    ("swetry", ["swet", "kardigan", "golf", "knit", "sweater"]),
-    ("koszulki", ["t-shirt", "koszulk", "tee", "top ", "longsleeve", "polo", "tank"]),
-    ("koszule", ["koszul", "shirt"]),
-    ("spodnie", ["spodn", "jeans", "dżins", "jogger", "chino", "cargo", "trousers", "pants", "legginsy"]),
-    ("szorty", ["spodenk", "szort", "bermud", "shorts"]),
-    ("sukienki", ["sukien", "dress"]),
-    ("spodnice", ["spódnic", "spodnic", "skirt"]),
-    ("buty", ["but", "sneaker", "trampk", "kozak", "sandał", "klapk", "shoes", "botk", "obuw"]),
-    ("dodatki", ["dom", "home", "czap", "szalik", "rękawicz", "pasek", "torb", "plecak", "skarpet", "okular", "bizuter", "biżuter", "kapelusz", "accessor", "portfel"]),
-    ("bielizna", ["bieliz", "majtk", "bokserk", "biustonosz", "piżam", "pizam", "underwear"]),
+# kolejność ma znaczenie: najpierw rzeczy szczegółowe (dodatki, bielizna), potem ogólne
+CATS = [
+    ("bielizna", r"\b(bieliz|majt|figi|stringi|bokserk|slip|biustonosz|stanik|piżam|pizam|koszul[a-z]* nocn|strój kąp|stroj kap|kąpielów|bikini|skarpet|rajstop|podkolan|underwear|socks)"),
+    ("dodatki", r"\b(czap|beanie|kapelusz|kaszkiet|komin|szal|chust|bandan|rękawicz|rekawicz|pas(ek|ka|kiem)\b|torb|torebk|plecak|saszetk|nerk|portfel|okular|bi[zż]uter|kolczyk|naszyjnik|bransolet|pierścion|spink|gumk|opask|brelok|parasol|etui|zegarek|krawat|mucha|kosmetycz|hat\b|cap\b|bag\b|scarf|belt\b|accessor)"),
+    ("buty", r"\b(but[yóa]?\b|obuw|sneaker|trampk|tenisów|kozak|botk|sandał|sandal|klapk|japonk|mokasyn|loafer|półbut|polbut|szpilk|czółen|czolen|baleriny|espadryl|kalosz|kapc|chelsea|glany|shoes|boots|sliders)"),
+    ("kurtki", r"\b(kurt|płaszcz|plaszcz|parka|puchów|puchow|bezrękaw|bezrekaw|kamizel|trencz|marynark|żakiet|zakiet|blezer|wiatrówk|jacket|coat|puffer|bomber|ramones|futerk|outwear|outer)"),
+    ("swetry", r"\b(swet|kardigan|golf|pulower|knit|sweater)"),
+    ("bluzy", r"\b(bluz(?!k)|bluza|bejsbolówk|sweatshirt|hoodie|hoodi)"),
+    ("koszule", r"\b(koszul(?!k|ow)|koszula|shirt\b)"),
+    ("sukienki", r"\b(sukien|sukni|dress|kombinezon)"),
+    ("spodnice", r"\b(spódnic|spodnic|skirt)"),
+    ("szorty", r"\b(szort|spodenk|kolark|bermud|shorts)"),
+    ("spodnie", r"\b(spodn|jeans|dżins|dzins|jogger|chino|cargo|legginsy|legginsów|dresy|trousers|pants)"),
+    ("koszulki", r"\b(t-shirt|koszulk|bluzk|top\b|topy|tank|polo|longsleeve|body\b|crop|tee\b|gorset)"),
 ]
+_CRE = [(k, re.compile(r, re.I)) for k, r in CATS]
 
-def cat_of(*texts):
-    t = " ".join(x for x in texts if x).lower()
-    for key, words in CATS:
-        if any(w in t for w in words):
-            return key
+def cat_of(name, *rest):
+    # najpierw sama nazwa produktu; wygrywa słowo, które stoi w nazwie najwcześniej
+    # („Szorty z paskiem” to szorty, nie pasek)
+    for text in (name,) + rest:
+        if not text: continue
+        best = None
+        for key, rx in _CRE:
+            m = rx.search(text)
+            if m and (best is None or m.start() < best[0]):
+                best = (m.start(), key)
+        if best:
+            return best[1]
     return "inne"
 
 def sex_of(s):
@@ -156,7 +164,7 @@ def lpp_shop(code, name, page):
             "price": money(h.get("final_price")), "old": money(h.get("regular_price")),
             "low30": money(h.get("history_price")) or None,
             "sex": sex_of(h.get("sex")),
-            "cat": cat_of(h.get("rms_class_name"), h.get("rms_subclass_name"), h.get("name"), cats),
+            "cat": cat_of(h.get("name"), h.get("rms_subclass_name"), h.get("rms_class_name"), cats),
             "sizes": [str(s) for s in (h.get("sizes") or [])],
             "color": (h.get("color") or "").split(":")[0],
         })
@@ -208,7 +216,7 @@ def zara_shop():
                             "id": f"zara:{p.get('id')}", "shop": "zara", "brand": "Zara",
                             "name": p.get("name", ""), "url": url, "img": imgs,
                             "price": round(price, 2), "old": round(old, 2), "low30": None,
-                            "sex": sex, "cat": cat_of(p.get("familyName"), p.get("subfamilyName"), p.get("name")),
+                            "sex": sex, "cat": cat_of(p.get("name"), p.get("subfamilyName"), p.get("familyName")),
                             "sizes": [s.get("name") for s in (col.get("sizes") or []) if s.get("availability") != "out_of_stock"],
                             "color": col.get("name", ""),
                         })

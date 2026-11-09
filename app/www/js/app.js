@@ -171,7 +171,7 @@ function buildFeed(keepPos) {
 const stack = $('#stack');
 const cards = new Map(); // indeks w feed -> element
 let cardH = 0; let cardW = 0;
-function measure() { const cs = getComputedStyle(document.documentElement); cardW = window.innerWidth * 0.78; cardH = cardW * 1.32; const free = stack.clientHeight - 150; if (cardH > free) { cardH = free; cardW = cardH / 1.32; } document.documentElement.style.setProperty('--card-w', cardW + 'px'); }
+function measure() { cardW = Math.round(window.innerWidth * 0.96); cardH = Math.round(cardW * 0.78); const r = document.documentElement.style; r.setProperty('--card-w', cardW + 'px'); r.setProperty('--card-h', cardH + 'px'); }
 
 function resetCards() { for (const el of cards.values()) el.remove(); cards.clear(); }
 
@@ -181,12 +181,13 @@ function makeCard(idx) {
   const it = S.feed[idx];
   const el = document.createElement('div');
   el.className = 'card' + (disc(it) >= 60 ? ' mega' : '');
+  el._st = {};
   el.dataset.idx = idx;
   el.innerHTML = `<div class="inner">
     <div class="face front"><img src="${esc(it.img[0])}" loading="eager" decoding="async" referrerpolicy="no-referrer" alt="">
-      <span class="tag">${esc(it.brand).toUpperCase()}</span><i class="grain"></i><i class="burn"></i><span class="frame">${frameNo(idx)} ▸ SZAFA 400</span></div>
-    <div class="face back"></div></div><i class="glow"></i><i class="shade"></i>`;
-  const img = el.querySelector('img'); img.decoding = 'async';
+      <i class="grain"></i><i class="shade"></i><i class="burn"></i><span class="frame">${frameNo(idx)} ▸ SZAFA 400</span></div>
+    <div class="face back"></div></div>`;
+  const img = el.querySelector('img'); img.decoding = 'async'; el._shade = el.querySelector('.shade');
   img.onerror = () => { if (it.img[1] && img.src !== it.img[1]) img.src = it.img[1]; };
   if (it.id === S.scratchId) addScratch(el);
   stack.appendChild(el);
@@ -201,20 +202,25 @@ function render() {
   const c = Math.round(S.pos);
   const lo = Math.max(0, Math.floor(S.pos) - 3); const hi = Math.min(n - 1, Math.ceil(S.pos) + 3);
   for (const [i, el] of cards) if (i < lo || i > hi) { el.remove(); cards.delete(i); }
-  const peek = Math.min(34, cardH * 0.06);
+  const peek = Math.max(40, (stack.clientHeight - cardH) / 2 / 2.4);
+  // na początku i końcu stosu przesuwamy całość, żeby nie było pustego pół ekranu
+  const room = (stack.clientHeight - cardH) / 2 - 10;
+  const edge = -clamp(room * (1 - S.pos / 2.4), 0, room) + clamp(room * (1 - (n - 1 - S.pos) / 2.4), 0, room);
   for (let i = lo; i <= hi; i++) {
     let el = cards.get(i); if (!el) { el = makeCard(i); cards.set(i, el); }
     const d = i - S.pos; const ad = Math.abs(d); const sg = Math.sign(d);
-    const s = 1 - 0.075 * Math.min(ad, 4);
-    let y = sg * (cardH / 2 * (1 - s) + peek * Math.min(ad, 4));
+    const s = 1 - 0.06 * Math.min(ad, 4);
+    let y = sg * (cardH / 2 * (1 - s) + peek * Math.min(ad, 4)) + edge;
     let tx = 0; let rot = 0;
     if (i === c && drag.mode === 'h') { tx = drag.dx; rot = drag.dx * 0.04; y += Math.abs(drag.dx) * 0.05; }
-    el.style.transform = `translate3d(${tx.toFixed(1)}px, ${y.toFixed(1)}px, 0) rotate(${rot.toFixed(2)}deg) scale(${s.toFixed(4)})`;
-    const z = String(100 - Math.round(ad * 10)); if (el.style.zIndex !== z) el.style.zIndex = z;
-    el.style.opacity = ad > 2.6 ? String(clamp(3.4 - ad, 0, 1)) : '1';
-    const sh = el.lastElementChild; const so = ad > 0.6 ? String(Math.min(ad, 3) * 0.07) : '0'; if (sh.style.opacity !== so) sh.style.opacity = so;
+    const st = el._st;
+    const tf = `translate3d(${tx.toFixed(1)}px,${y.toFixed(1)}px,0) rotate(${rot.toFixed(2)}deg) scale(${s.toFixed(4)})`;
+    if (st.tf !== tf) { el.style.transform = tf; st.tf = tf; }
+    const z = 100 - Math.round(ad * 10); if (st.z !== z) { el.style.zIndex = String(z); st.z = z; }
+    const op = ad > 2.8 ? Math.round(clamp(3.6 - ad, 0, 1) * 50) / 50 : 1; if (st.op !== op) { el.style.opacity = String(op); st.op = op; }
+    const so = Math.round(Math.min(ad, 3) * 0.16 * 50) / 50; if (st.so !== so) { el._shade.style.opacity = String(so); st.so = so; }
     if (el.classList.contains('center') !== (i === c)) el.classList.toggle('center', i === c);
-    if (i !== c && el.classList.contains('flipped')) el.classList.remove('flipped');
+    if (i !== c && el.classList.contains('flipped')) el.classList.remove('flipped', 'flipping');
   }
   if (c !== render.last) { if (render.last != null) { S.set.film ? SFX.film() : SFX.tick(); } render.last = c; preload(c); }
 }
@@ -254,6 +260,7 @@ stack.addEventListener('pointerdown', (e) => {
   clearTimeout(drag.lp);
   drag.lp = setTimeout(() => { if (!drag.moved && drag.mode == null) { drag.mode = 'lp'; flipCenter(); } }, 430);
 });
+stack.addEventListener('pointerdown', () => document.body.classList.remove('navopen'), { passive: true });
 stack.addEventListener('pointermove', (e) => {
   if (e.pointerId !== drag.id || drag.mode === 'lp') return;
   drag.dx = e.clientX - drag.x0; drag.dy = e.clientY - drag.y0;
@@ -288,7 +295,7 @@ function endDrag(e) {
     const el = drag.card; if (!el) return;
     const i = Number(el.dataset.idx); const c = Math.round(S.pos);
     if (i !== c) { snapTo(i); return; }
-    if (el.classList.contains('flipped')) { el.classList.remove('flipped'); SFX.flip(); return; }
+    if (el.classList.contains('flipped')) { el.classList.remove('flipped'); setTimeout(() => el.classList.remove('flipping'), 600); SFX.flip(); return; }
     if (el.querySelector('canvas.scratch')) return;
     openDetail(S.feed[i]);
   }
@@ -317,14 +324,13 @@ function flipCenter() {
   const back = el.querySelector('.back');
   if (!back.dataset.done) {
     back.innerHTML = `<div class="meta mono"><span>${esc(CAT_NAME[it.cat] || '')}</span><span>${it.first === today() ? 'NOWOŚĆ DZIŚ' : 'OD ' + esc(it.first)}</span></div>
-      <div class="brand">${esc(it.brand).toUpperCase()}=]</div><div class="name">${esc(it.name)}</div>
-      <canvas width="160" height="60"></canvas>
-      <div class="mono">${lowLine(it)}</div>
-      <div class="prices"><span class="now">${zl(it.price)} zł</span><span class="was">${zl(it.old)}</span><span class="badge">-${disc(it)}%</span></div>`;
+      <div class="left"><div class="brand">${esc(it.brand).toUpperCase()}=]</div><div class="name">${esc(it.name)}</div>
+      <canvas width="160" height="50"></canvas><div class="mono">${lowLine(it)}</div></div>
+      <div class="prices"><span class="badge">-${disc(it)}%</span><span class="was">${zl(it.old)} zł</span><span class="now">${zl(it.price)} zł</span></div>`;
     back.dataset.done = 1;
     drawChart(back.querySelector('canvas'), it);
   }
-  el.classList.add('flipped'); SFX.flip(); buzz(15);
+  el.classList.add('flipping'); requestAnimationFrame(() => el.classList.add('flipped')); SFX.flip(); buzz(15);
 }
 
 function lowLine(it) {
@@ -396,15 +402,16 @@ function addScratch(el) {
 
 // ---------- efekty na płótnie ----------
 const fx = $('#fx'); const fxc = fx.getContext('2d');
+let fxN = 0; const fxOn = () => { fxN++; fx.classList.add('on'); }; const fxOff = () => { if (--fxN <= 0) { fxN = 0; fx.classList.remove('on'); } };
 function fitFx() { fx.width = window.innerWidth; fx.height = window.innerHeight; }
 
 function confetti() {
   const parts = Array.from({ length: 90 }, () => ({ x: fx.width / 2, y: fx.height * 0.45, vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 14 - 4, c: Math.random() > 0.5 ? '#F28C28' : '#141414', s: 4 + Math.random() * 5 | 0 }));
-  const t0 = performance.now();
+  const t0 = performance.now(); fxOn();
   const step = (now) => {
     fxc.clearRect(0, 0, fx.width, fx.height);
     for (const p of parts) { p.vy += 0.5; p.x += p.vx; p.y += p.vy; fxc.fillStyle = p.c; fxc.fillRect(p.x | 0, p.y | 0, p.s, p.s); }
-    if (now - t0 < 1800) requestAnimationFrame(step); else fxc.clearRect(0, 0, fx.width, fx.height);
+    if (now - t0 < 1800) requestAnimationFrame(step); else { fxc.clearRect(0, 0, fx.width, fx.height); fxOff(); }
   };
   requestAnimationFrame(step);
 }
@@ -412,7 +419,7 @@ function confetti() {
 // zgniecenie karty w pikselową kulkę
 function crumple(el, done) {
   const img = el.querySelector('.front img'); const r = el.getBoundingClientRect();
-  el.style.visibility = 'hidden';
+  el.style.visibility = 'hidden'; fxOn();
   const off = document.createElement('canvas'); const ox = off.getContext('2d');
   const t0 = performance.now(); const D = 820;
   let vy = 0; let by = 0;
@@ -431,7 +438,7 @@ function crumple(el, done) {
     if (e > 0.5) { fxc.beginPath(); fxc.arc(0, 0, Math.max(w, h) / 2, 0, Math.PI * 2); fxc.clip(); }
     fxc.drawImage(off, -w / 2, -h / 2, w, h);
     fxc.restore();
-    if (k < 1 && cy < fx.height + 60) requestAnimationFrame(step); else { fxc.clearRect(0, 0, fx.width, fx.height); done(); }
+    if (k < 1 && cy < fx.height + 60) requestAnimationFrame(step); else { fxc.clearRect(0, 0, fx.width, fx.height); fxOff(); done(); }
   };
   requestAnimationFrame(step);
 }
@@ -441,12 +448,12 @@ function toWardrobe(c) {
   const it = S.feed[c]; const el = cards.get(c);
   S.saved[it.id] = { item: it, at: Date.now(), price: it.price }; save('saved', S.saved); syncWatch();
   SFX.whoosh(); setTimeout(SFX.drawer, 260); buzz(25);
-  const nav = $('#nav [data-go=wardrobe]').getBoundingClientRect();
+  const nav = $('#menuBtn').getBoundingClientRect();
   el.style.transition = 'transform .5s cubic-bezier(.5,0,.8,.4), opacity .5s';
   const r = el.getBoundingClientRect();
   el.style.transform = `translate3d(${nav.left + nav.width / 2 - (r.left + r.width / 2)}px, ${nav.top - (r.top + r.height / 2)}px, 0) scale(.08) rotate(25deg)`;
   el.style.opacity = '0.2';
-  $('#nav [data-go=wardrobe]').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 300, delay: 450 });
+  $('#menuBtn').animate([{ transform: 'scale(1)', opacity: .28 }, { transform: 'scale(1.6)', opacity: 1 }, { transform: 'scale(1)', opacity: .28 }], { duration: 400, delay: 450 });
   setTimeout(() => removeFromFeed(c), 480);
 }
 
@@ -581,6 +588,7 @@ function renderWardrobe(withDoors) {
 
 // ---------- nawigacja ----------
 function go(name) {
+  document.body.classList.toggle('onfeed', name === 'feed'); document.body.classList.remove('navopen');
   $$('.screen').forEach((s) => s.classList.toggle('active', s.id === name));
   $$('#nav button').forEach((b) => b.classList.toggle('on', b.dataset.go === name));
   if (name === 'wardrobe') renderWardrobe(true);
@@ -691,7 +699,7 @@ async function checkUpdate(manual) {
 }
 
 // ---------- ozdobnik w rogu ----------
-function cornerPixels() { const r = rng(today()); $('#pixels').innerHTML = Array.from({ length: 20 }, () => `<i class="${r() > 0.5 ? '' : 'o'}"></i>`).join(''); }
+
 
 // ---------- start ----------
 window.addEventListener('resize', () => { measure(); fitFx(); render(); });
@@ -702,7 +710,8 @@ if (window.Capacitor && plugin('App')) plugin('App').addListener('backButton', (
   plugin('App').exitApp();
 });
 document.body.classList.toggle('film', S.set.film);
-measure(); fitFx(); cornerPixels(); makeGrain();
+measure(); fitFx(); makeGrain(); document.body.classList.add('onfeed');
+$('#menuBtn').onclick = () => { ac(); SFX.tick(); document.body.classList.toggle('navopen'); };
 loadData();
 setTimeout(() => checkUpdate(false), 4000);
 if (S.launches <= 3) {
