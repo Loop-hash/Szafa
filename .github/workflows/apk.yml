@@ -26,7 +26,8 @@ jobs:
         run: npm ci
       - name: Numer wersji
         working-directory: app
-        run: printf '{"build": %s, "sha": "%s"}\n' "$GITHUB_RUN_NUMBER" "${GITHUB_SHA::7}" > www/build.json
+        run: |
+          printf '{"build": %s, "sha": "%s"}\n' "$GITHUB_RUN_NUMBER" "${GITHUB_SHA::7}" > www/build.json
       - name: Budowanie APK
         working-directory: app
         run: |
