@@ -2,6 +2,14 @@
   "appId": "pl.szafa.app",
   "appName": "Szafa",
   "webDir": "www",
-  "android": { "backgroundColor": "#F2EEE3", "webContentsDebuggingEnabled": true },
-  "loggingBehavior": "production"
+  "android": {
+    "backgroundColor": "#F2EEE3",
+    "webContentsDebuggingEnabled": true
+  },
+  "loggingBehavior": "production",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
 }

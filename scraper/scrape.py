@@ -142,12 +142,6 @@ def lpp_shop(code, name, page):
         except Exception as e:
             log(f"  {label}: błąd {e}")
     hits = list(found.values())
-    # podgląd surowych danych (debug): kilka trafień i wyprzedany przykład
-    try:
-        raw = hits[:15] + [h for h in hits if "baby tee" in (h.get("name") or "").lower()][:5]
-        json.dump(raw, open(os.path.join("debug", f"raw_{code}.json"), "w"), ensure_ascii=False, indent=1)
-    except Exception:
-        pass
     items = []
     for h in hits or []:
         photos = h.get("photos") or {}
@@ -173,6 +167,7 @@ def lpp_shop(code, name, page):
             "cat": cat_of(h.get("name"), h.get("rms_subclass_name"), h.get("rms_class_name"), cats),
             "sizes": [str(s) for s in (h.get("sizes") or [])],
             "color": (h.get("color") or "").split(":")[0],
+            "low": bool(h.get("is_low_stock") or h.get("low_stock")),
         })
     log(f"  {name}: {len(items)} rzeczy ({', '.join(how)})")
     return items
@@ -231,6 +226,50 @@ def zara_shop():
     log("  Zara:", len(items))
     return items
 
+# ---------- dostępność (strony produktów LPP) ----------
+# Wyszukiwarka sklepu potrafi pokazywać rozmiary, których już nie ma. Strona produktu ma
+# stan każdego rozmiaru, więc sprawdzamy ją: co przebieg część rzeczy, najpierw nowe
+# i te z końcówką zapasu, a wynik trzymamy w data/stock.json.
+SIZE_RX = re.compile(r'"isInStock":(true|false),"isStockInTransit":(?:true|false),"magentoId":\d+,"mappedAs":\[[^\]]*\],"sizeId":\d+,"sizeName":"([^"]+)","sku":"([^"]+)"')
+
+def page_sizes(item):
+    r = S.get(item["url"], timeout=30)
+    if r.status_code == 404:
+        return []
+    r.raise_for_status()
+    sku = item["id"].split(":", 1)[1]
+    found = {}
+    for ok, size, s_sku in SIZE_RX.findall(r.text):
+        if s_sku.startswith(sku + "-"):
+            found[size] = found.get(size, False) or ok == "true"
+    if not found:
+        return None  # nie umiemy odczytać, zostawiamy bez zmian
+    return [k for k, v in found.items() if v]
+
+def check_stock(items, stock, budget=1600, workers=8):
+    from concurrent.futures import ThreadPoolExecutor
+    now = datetime.datetime.utcnow()
+    def age(it):
+        e = stock.get(it["id"])
+        if not e: return 1e9
+        return (now - datetime.datetime.fromisoformat(e["t"])).total_seconds() / 3600
+    lpp = [i for i in items if i["shop"] in LPP]
+    # kolejka: nigdy niesprawdzane, potem końcówki zapasu starsze niż 5 h, potem reszta starsza niż 30 h
+    todo = sorted([i for i in lpp if age(i) > (5 if i.get("low") else 30)],
+                  key=lambda i: (age(i) < 1e9, not i.get("low"), -age(i)))[:budget]
+    ok = gone = err = 0
+    def one(it):
+        try: return it, page_sizes(it)
+        except Exception: return it, "err"
+    with ThreadPoolExecutor(workers) as ex:
+        for it, res in ex.map(one, todo):
+            if res == "err": err += 1; continue
+            if res is None: continue
+            stock[it["id"]] = {"t": now.strftime("%Y-%m-%dT%H:%M"), "s": res}
+            if res: ok += 1
+            else: gone += 1
+    log(f"dostępność: sprawdzono {len(todo)}, dostępne {ok}, wyprzedane {gone}, błędów {err}")
+
 # ---------- składanie ----------
 def main():
     ap = argparse.ArgumentParser()
@@ -263,6 +302,24 @@ def main():
     seen = {}
     for it in all_items: seen[it["id"]] = it
     items = list(seen.values())
+    stock_p = os.path.join(a.data, "stock.json")
+    stock = json.load(open(stock_p)) if os.path.exists(stock_p) else {}
+    try:
+        check_stock(items, stock)
+    except Exception as e:
+        log("dostępność BŁĄD", e)
+    stock = {k: v for k, v in stock.items() if k in seen}
+    json.dump(stock, open(stock_p, "w"), separators=(",", ":"))
+    kept = []
+    for it in items:
+        e = stock.get(it["id"])
+        if e is not None:
+            if not e["s"]: continue  # wyprzedane we wszystkich rozmiarach
+            it["sizes"] = e["s"]
+            it["chk"] = e["t"][:10]
+        kept.append(it)
+    log(f"po odrzuceniu wyprzedanych: {len(kept)} z {len(items)}")
+    items = kept
     for it in items:
         h = history.setdefault(it["id"], [])
         if not h or h[-1][1] != it["price"]:

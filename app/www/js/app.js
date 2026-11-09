@@ -51,6 +51,7 @@ const S = {
   set: { ...DEF, ...load('set', {}) },
   saved: load('saved', {}), // id -> {item, at, price}
   trash: new Set(load('trash', [])),
+  sold: load('sold', {}), // id -> dzień, kiedy apka zobaczyła, że wyprzedane
   scratchDay: load('scratchDay', ''),
   launches: load('launches', 0) + 1,
   items: [], byId: new Map(), feed: [], pos: 0, quickCat: null, updated: '',
@@ -135,7 +136,7 @@ function sizeOk(it) {
 
 function passes(it, ignoreQuick) {
   const s = S.set;
-  if (S.trash.has(it.id)) return false;
+  if (S.trash.has(it.id) || S.sold[it.id]) return false;
   if (!s.shops.includes(it.shop)) return false;
   if (!s.sex.includes(it.sex === 'd' ? 'd' : it.sex)) return false;
   if (!s.cats.includes(it.cat)) return false;
@@ -222,7 +223,7 @@ function render() {
     if (el.classList.contains('center') !== (i === c)) el.classList.toggle('center', i === c);
     if (i !== c && el.classList.contains('flipped')) el.classList.remove('flipped', 'flipping');
   }
-  if (c !== render.last) { if (render.last != null) { S.set.film ? SFX.film() : SFX.tick(); } render.last = c; preload(c); }
+  if (c !== render.last) { if (render.last != null) { S.set.film ? SFX.film() : SFX.tick(); } render.last = c; preload(c); checkCenterSoon(); }
 }
 
 // jedno przerysowanie na klatkę, nawet gdy palec wysyła więcej zdarzeń
@@ -484,11 +485,20 @@ function openDetail(it, opts = {}) {
       <div class="pr"><span class="now">${zl(live.price)} zł</span><span class="was">${zl(live.old)} zł</span><span class="dbadge">-${disc(live)}%</span></div>
       <canvas width="200" height="70"></canvas>
       <div class="desc">${esc(CAT_NAME[it.cat] || '')} · ${esc(it.color || '')} · ${esc(it.brand)}. ${gone ? 'Promocja chyba się skończyła albo rzecz zniknęła ze sklepu. ' : ''}W promocji od ${esc(it.first)}. ${lowLine(live)}.${live.low30 ? ' Najniższa cena z 30 dni wg sklepu: ' + zl(live.low30) + ' zł.' : ''}${sv && S.saved[it.id].price !== live.price ? ' Gdy wkładałeś do szafy: ' + zl(S.saved[it.id].price) + ' zł.' : ''}</div>
-      ${it.sizes && it.sizes.length ? `<div class="chips">${it.sizes.map((s) => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : ''}
+      <div class="chips" id="dsizes">${(it.sizes || []).map((s) => `<span class="chip">${esc(s)}</span>`).join('')}</div>
     </div></div>
     <div class="actions"><button class="btn" data-w>${sv ? 'Wyjmij z szafy' : 'Do szafy'}</button><button class="btn dark" data-shop>Do sklepu ↗</button></div>`;
   drawChart(L.querySelector('canvas'), live);
   L.classList.add('on');
+  liveSizes(it).then((sz) => {
+    const box = L.querySelector('#dsizes'); if (!box || sz == null) return;
+    if (!sz.length) {
+      box.innerHTML = '<span class="chip on">WYPRZEDANE</span>'; markSold(it);
+      const k = S.feed.indexOf(it); if (k >= 0) { S.feed.splice(k, 1); resetCards(); render(); }
+      return;
+    }
+    box.innerHTML = sz.map((s) => `<span class="chip on">${esc(s)}</span>`).join('');
+  });
   if (opts.drop) L.animate([{ transform: 'translateY(-110vh) rotate(-6deg)' }, { transform: 'translateY(4vh) rotate(1deg)' }, { transform: 'translateY(0)' }], { duration: 650, easing: 'cubic-bezier(.3,.9,.3,1)' });
   L.querySelector('[data-x]').onclick = () => L.classList.remove('on');
   L.querySelector('[data-shop]').onclick = () => openUrl(it.url);
@@ -498,6 +508,42 @@ function openDetail(it, opts = {}) {
     save('saved', S.saved); syncWatch();
     if ($('#wardrobe').classList.contains('active')) renderWardrobe(false);
   };
+}
+
+// ---------- dostępność na żywo (strona produktu sklepu) ----------
+const LPP = ['reserved', 'cropp', 'house', 'mohito', 'sinsay'];
+const live = {}; // id -> {t, sizes} (null = nie wiadomo)
+async function liveSizes(it) {
+  if (!LPP.includes(it.shop) || !native()) return null;
+  const c = live[it.id]; if (c && Date.now() - c.t < 20 * 60000) return c.sizes;
+  try {
+    const r = await fetch(it.url, { cache: 'no-store' });
+    if (r.status === 404) { live[it.id] = { t: Date.now(), sizes: [] }; return []; }
+    const h = await r.text(); const sku = it.id.split(':')[1];
+    const rx = /"isInStock":(true|false),"isStockInTransit":(?:true|false),"magentoId":\d+,"mappedAs":\[[^\]]*\],"sizeId":\d+,"sizeName":"([^"]+)","sku":"([^"]+)"/g;
+    const got = {}; let m;
+    while ((m = rx.exec(h))) if (m[3].startsWith(sku + '-')) got[m[2]] = got[m[2]] || m[1] === 'true';
+    if (!Object.keys(got).length) return null;
+    const sizes = Object.keys(got).filter((k) => got[k]);
+    live[it.id] = { t: Date.now(), sizes };
+    return sizes;
+  } catch (e) { return null; }
+}
+function markSold(it) { S.sold[it.id] = today(); const keep = {}; const lim = Date.now() - 20 * 864e5; for (const [k, v] of Object.entries(S.sold)) if (new Date(v).getTime() > lim) keep[k] = v; S.sold = keep; save('sold', S.sold); }
+
+// środkowa karta sprawdza się sama, gdy się na niej zatrzymasz; wyprzedana znika
+let liveTimer = 0;
+function checkCenterSoon() {
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(async () => {
+    const c = Math.round(S.pos); const it = S.feed[c]; if (!it) return;
+    const sz = await liveSizes(it);
+    if (sz && !sz.length && S.feed[Math.round(S.pos)] === it && !drag.mode) {
+      markSold(it); const el = cards.get(c);
+      if (el) el.animate([{ opacity: 1, filter: 'grayscale(0)' }, { opacity: 0, filter: 'grayscale(1)' }], { duration: 500 }).onfinish = () => removeFromFeed(S.feed.indexOf(it));
+      toast('Wyprzedane, wyrzucam');
+    } else if (sz && sz.length) it.sizes = sz;
+  }, 700);
 }
 
 function openUrl(u) { if (native()) window.location.href = u; else window.open(u, '_blank', 'noopener'); }
