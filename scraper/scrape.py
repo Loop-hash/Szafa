@@ -142,6 +142,12 @@ def lpp_shop(code, name, page):
         except Exception as e:
             log(f"  {label}: błąd {e}")
     hits = list(found.values())
+    # podgląd surowych danych (debug): kilka trafień i wyprzedany przykład
+    try:
+        raw = hits[:15] + [h for h in hits if "baby tee" in (h.get("name") or "").lower()][:5]
+        json.dump(raw, open(os.path.join("debug", f"raw_{code}.json"), "w"), ensure_ascii=False, indent=1)
+    except Exception:
+        pass
     items = []
     for h in hits or []:
         photos = h.get("photos") or {}
