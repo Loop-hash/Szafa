@@ -30,7 +30,7 @@ const CATS = [
   ['buty', 'Buty', 'sneakersy i nie tylko'], ['dodatki', 'Dodatki', 'czapki, torby, paski'], ['bielizna', 'Bielizna', ''], ['inne', 'Inne', 'reszta'],
 ];
 const CAT_NAME = Object.fromEntries(CATS.map((c) => [c[0], c[1]]));
-const SHOPS = [['reserved', 'Reserved'], ['cropp', 'Cropp'], ['house', 'House'], ['mohito', 'Mohito'], ['sinsay', 'Sinsay'], ['zara', 'Zara']];
+const SHOPS = [['reserved', 'Reserved'], ['cropp', 'Cropp'], ['house', 'House'], ['mohito', 'Mohito'], ['sinsay', 'Sinsay'], ['zara', 'Zara'], ['ccc', 'CCC']];
 const GROUP = { kurtki: 'top', bluzy: 'top', swetry: 'top', koszulki: 'top', koszule: 'top', sukienki: 'top', spodnie: 'bottom', szorty: 'bottom', spodnice: 'bottom', buty: 'shoes' };
 const SIZES = {
   top: ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
@@ -57,6 +57,7 @@ const S = {
   items: [], byId: new Map(), feed: [], pos: 0, quickCat: null, updated: '',
 };
 S.set.sizes = { ...DEF.sizes, ...(S.set.sizes || {}) };
+for (const [k] of SHOPS) if (!load('seenShop.' + k, false)) { if (!S.set.shops.includes(k)) S.set.shops.push(k); save('seenShop.' + k, true); }
 save('launches', S.launches);
 
 // duże dane w IndexedDB (localStorage ma za mało miejsca)

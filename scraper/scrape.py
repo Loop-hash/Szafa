@@ -226,6 +226,64 @@ def zara_shop():
     log("  Zara:", len(items))
     return items
 
+# ---------- CCC (buty i dodatki, kafelki z HTML) ----------
+def ccc_shop():
+    from bs4 import BeautifulSoup
+    items, page, pages = [], 1, 1
+    base = "https://ccc.eu/pl/pl/c/promo/wyprzedaz-sezonowa"
+    def zl_of(t):
+        m = re.search(r"([\d\s]+,\d{2})", t.replace("\xa0", " "))
+        return money(m.group(1)) if m else 0.0
+    while page <= min(pages, 90):
+        try:
+            r = S.get(base + (f"?page={page}" if page > 1 else ""), timeout=40)
+        except Exception as e:
+            log("  ccc strona", page, "błąd", e); break
+        if r.status_code != 200: log("  ccc status", r.status_code); break
+        soup = BeautifulSoup(r.text, "html.parser")
+        if page == 1:
+            m = re.search(r'text-gray-400">\s*z\s*</div><div[^>]*>\s*(\d+)\s*<', r.text)
+            pages = int(m.group(1)) if m else 1
+        boxes = soup.find_all("o-product-box")
+        if not boxes: break
+        for b in boxes:
+            a = b.find("a", href=True)
+            brand = (b.find(id=re.compile(r"^trademark-")) or {}).get_text(strip=True) if b.find(id=re.compile(r"^trademark-")) else ""
+            model = b.find(id=re.compile(r"^model-"))
+            name = model.get_text(strip=True) if model else ""
+            pr = b.find(id=re.compile(r"^price-"))
+            price = zl_of(pr.get_text(" ")) if pr else 0
+            om = b.find(id=re.compile(r"^omnibus-"))
+            low30 = old = 0
+            if om:
+                t = om.get_text(" ", strip=True)
+                m1 = re.search(r"30 dni[^:]*:\s*([\d\s]+,\d{2})", t.replace("\xa0", " "))
+                m2 = re.search(r"(?:Cena pierwsza|Cena regularna|Cena katalogowa)[^:]*:\s*([\d\s]+,\d{2})", t.replace("\xa0", " "))
+                low30 = money(m1.group(1)) if m1 else 0
+                old = money(m2.group(1)) if m2 else 0
+            if not old: old = low30
+            if not a or not price or not old or price >= old - 0.01: continue
+            if "sold-out" in str(b) and "Wyprzedane" in b.get_text(): continue
+            imgs = [i["src"] for i in b.find_all("img", src=True) if "necom-cdn" in i["src"]][:3]
+            if not imgs: continue
+            items.append({
+                "id": "ccc:" + (b.get("data-product-id") or a["href"].rsplit("-", 1)[-1]), "shop": "ccc", "brand": brand.title() or "CCC",
+                "name": name, "url": "https://ccc.eu" + a["href"] if a["href"].startswith("/") else a["href"], "img": imgs,
+                "price": price, "old": old, "low30": low30 or None, "sex": sex_of_name(name), "cat": cat_of(name),
+                "sizes": [], "color": "",
+            })
+        page += 1
+        time.sleep(0.4)
+    log(f"  CCC: {len(items)} (stron {pages})")
+    return items
+
+def sex_of_name(n):
+    n = (n or "").lower()
+    if re.search(r"\bdamsk|\bdla niej|\bkobie", n): return "k"
+    if re.search(r"\bmęsk|\bmesk|\bdla niego", n): return "m"
+    if re.search(r"\bdziec|\bdziew|\bchłop|\bchlop", n): return "d"
+    return "u"
+
 # ---------- dostępność (strony produktów LPP) ----------
 # Wyszukiwarka sklepu potrafi pokazywać rozmiary, których już nie ma. Strona produktu ma
 # stan każdego rozmiaru, więc sprawdzamy ją: co przebieg część rzeczy, najpierw nowe
@@ -286,6 +344,7 @@ def main():
     all_items, status = [], {}
     shops = [(c, (lambda c=c, n=n, u=u: lpp_shop(c, n, u))) for c, (n, u) in LPP.items()]
     shops.append(("zara", zara_shop))
+    shops.append(("ccc", ccc_shop))
     for code, fn in shops:
         try:
             got = fn()
