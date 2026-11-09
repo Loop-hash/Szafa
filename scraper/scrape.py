@@ -145,7 +145,8 @@ def lpp_shop(code, name, page):
         if not imgs: continue
         cats = " ".join(h.get("categories_list") or [])
         dep = (h.get("rms_department_name") or "").lower()
-        if "home" in dep or "dom" in (h.get("categories", {}).get("lvl0") or [""])[0].lower(): continue
+        c0 = h.get("categories") if isinstance(h.get("categories"), dict) else {}
+        if "home" in dep or "dom" in ((c0.get("lvl0") or [""])[0] or "").lower(): continue
         items.append({
             "id": f"{code}:{h.get('sku') or h['objectID']}",
             "shop": code, "brand": name,
