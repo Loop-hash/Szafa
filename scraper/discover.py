@@ -30,7 +30,6 @@ PAGES = {
  "newyorker": "https://www.newyorker.de/pl/",
  "only": "https://www.only.com/pl-pl/sale",
  "jackjones": "https://www.jackjones.com/pl-pl/sale",
- "vinted": "https://www.vinted.pl/",
  "halfprice": "https://www.halfprice.eu/pl",
  "tkmaxx": "https://www.tkmaxx.com/pl/pl/",
  "wolczanka": "https://wolczanka.pl/",
