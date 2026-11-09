@@ -246,7 +246,7 @@ def page_sizes(item):
         return None  # nie umiemy odczytać, zostawiamy bez zmian
     return [k for k, v in found.items() if v]
 
-def check_stock(items, stock, budget=1600, workers=8):
+def check_stock(items, stock, budget=4500, workers=10):
     from concurrent.futures import ThreadPoolExecutor
     now = datetime.datetime.utcnow()
     def age(it):
