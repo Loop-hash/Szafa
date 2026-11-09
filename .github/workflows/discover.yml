@@ -1,0 +1,25 @@
+name: Podglad sklepow
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scraper/discover.py", ".github/workflows/discover.yml"]
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r scraper/requirements.txt
+      - run: python scraper/discover.py debug 2>&1 | tee debug.log; mv debug.log debug/ || true
+      - name: Na galaz ci-discover
+        if: always()
+        run: |
+          cd debug
+          git init -q -b ci-discover
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add -A; git commit -qm "discover $GITHUB_RUN_NUMBER"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-discover
