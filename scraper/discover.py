@@ -10,28 +10,8 @@ HEADERS = {"User-Agent": UA, "Accept-Language": "pl-PL,pl;q=0.9",
            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
 
 PAGES = {
- "reserved_sale": "https://www.reserved.com/pl/pl/sale",
- "reserved_on": "https://www.reserved.com/pl/pl/on/sale",
- "sinsay_sale": "https://www.sinsay.com/pl/pl/sale",
- "cropp_sale": "https://www.cropp.com/pl/pl/sale",
- "house_sale": "https://www.housebrand.com/pl/pl/sale",
- "mohito_sale": "https://www.mohito.com/pl/pl/sale",
- "reserved_robots": "https://www.reserved.com/robots.txt",
- "hm_sale_on": "https://www2.hm.com/pl_pl/wyprzedaz/on/view-all.html",
- "hm_sale_ona": "https://www2.hm.com/pl_pl/wyprzedaz/ona/view-all.html",
- "zalando_on": "https://www.zalando.pl/promo-mezczyzni/",
- "answear_on": "https://answear.com/k/on/wyprzedaz",
- "medicine_on": "https://wearmedicine.com/k/on/wyprzedaz",
- "4f_sale": "https://4f.com.pl/wyprzedaz",
- "zara_sale": "https://www.zara.com/pl/pl/s-man-l7465.html",
- "zara_api": "https://www.zara.com/pl/pl/categories?ajax=true",
- "bershka": "https://www.bershka.com/pl/",
- "bigstar": "https://www.bigstar.pl/wyprzedaz",
- "diverse": "https://www.diverse.pl/wyprzedaz",
- "pepco": "https://pepco.pl/",
- "ccc": "https://ccc.eu/pl/wyprzedaz",
- "modivo": "https://modivo.pl/c/wyprzedaz",
- "lpp_api_guess": "https://www.reserved.com/pl/pl/api/catalog/search?query=sale",
+ "cropp_soldout": "https://www.cropp.com/pl/pl/czarny-t-shirt-typu-baby-tee-063fp-99x",
+ "cropp_ok": "https://www.cropp.com/pl/pl/czarna-pikowana-kurtka-puffer-z-kapturem-211fr-99x",
 }
 
 def summarize(html):
