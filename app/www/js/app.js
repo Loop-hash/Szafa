@@ -185,8 +185,8 @@ function makeCard(idx) {
   el.innerHTML = `<div class="inner">
     <div class="face front"><img src="${esc(it.img[0])}" loading="eager" decoding="async" referrerpolicy="no-referrer" alt="">
       <span class="tag">${esc(it.brand).toUpperCase()}</span><i class="grain"></i><i class="burn"></i><span class="frame">${frameNo(idx)} ▸ SZAFA 400</span></div>
-    <div class="face back"></div></div>`;
-  const img = el.querySelector('img');
+    <div class="face back"></div></div><i class="glow"></i><i class="shade"></i>`;
+  const img = el.querySelector('img'); img.decoding = 'async';
   img.onerror = () => { if (it.img[1] && img.src !== it.img[1]) img.src = it.img[1]; };
   if (it.id === S.scratchId) addScratch(el);
   stack.appendChild(el);
@@ -199,7 +199,7 @@ function render() {
   if (!n) { resetCards(); return; }
   S.pos = clamp(S.pos, -0.35, n - 1 + 0.35);
   const c = Math.round(S.pos);
-  const lo = Math.max(0, Math.floor(S.pos) - 4); const hi = Math.min(n - 1, Math.ceil(S.pos) + 4);
+  const lo = Math.max(0, Math.floor(S.pos) - 3); const hi = Math.min(n - 1, Math.ceil(S.pos) + 3);
   for (const [i, el] of cards) if (i < lo || i > hi) { el.remove(); cards.delete(i); }
   const peek = Math.min(34, cardH * 0.06);
   for (let i = lo; i <= hi; i++) {
@@ -207,17 +207,38 @@ function render() {
     const d = i - S.pos; const ad = Math.abs(d); const sg = Math.sign(d);
     const s = 1 - 0.075 * Math.min(ad, 4);
     let y = sg * (cardH / 2 * (1 - s) + peek * Math.min(ad, 4));
-    const rx = -sg * Math.min(ad, 1) * 9;
     let tx = 0; let rot = 0;
     if (i === c && drag.mode === 'h') { tx = drag.dx; rot = drag.dx * 0.04; y += Math.abs(drag.dx) * 0.05; }
-    el.style.transform = `translate3d(${tx}px, ${y}px, ${-ad * 40}px) rotateX(${rx}deg) rotate(${rot}deg) scale(${s})`;
-    el.style.zIndex = String(100 - Math.round(ad * 10));
-    el.style.opacity = ad > 3.6 ? String(clamp(4.4 - ad, 0, 1)) : '1';
-    el.style.filter = ad > 0.6 ? `brightness(${1 - Math.min(ad, 4) * 0.06})` : '';
-    el.classList.toggle('center', i === c);
+    el.style.transform = `translate3d(${tx.toFixed(1)}px, ${y.toFixed(1)}px, 0) rotate(${rot.toFixed(2)}deg) scale(${s.toFixed(4)})`;
+    const z = String(100 - Math.round(ad * 10)); if (el.style.zIndex !== z) el.style.zIndex = z;
+    el.style.opacity = ad > 2.6 ? String(clamp(3.4 - ad, 0, 1)) : '1';
+    const sh = el.lastElementChild; const so = ad > 0.6 ? String(Math.min(ad, 3) * 0.07) : '0'; if (sh.style.opacity !== so) sh.style.opacity = so;
+    if (el.classList.contains('center') !== (i === c)) el.classList.toggle('center', i === c);
     if (i !== c && el.classList.contains('flipped')) el.classList.remove('flipped');
   }
-  if (c !== render.last) { if (render.last != null) { S.set.film ? SFX.film() : SFX.tick(); } render.last = c; }
+  if (c !== render.last) { if (render.last != null) { S.set.film ? SFX.film() : SFX.tick(); } render.last = c; preload(c); }
+}
+
+// jedno przerysowanie na klatkę, nawet gdy palec wysyła więcej zdarzeń
+let rq = 0;
+function queueRender() { if (!rq) rq = requestAnimationFrame(() => { rq = 0; render(); }); }
+
+// zdjęcia kolejnych kart pobierają się zawczasu, żeby przewijanie nie czekało na sieć
+const pre = new Set();
+function preload(c) {
+  for (let i = c + 1; i <= c + 6 && i < S.feed.length; i++) {
+    const u = S.feed[i].img[0]; if (pre.has(u)) continue; pre.add(u);
+    const im = new Image(); im.decoding = 'async'; im.referrerPolicy = 'no-referrer'; im.src = u;
+    if (im.decode) im.decode().catch(() => {});
+  }
+  if (pre.size > 400) pre.clear();
+}
+
+// ziarno kliszy: raz narysowany mały szum zamiast filtra SVG na każdej karcie
+function makeGrain() {
+  const c = document.createElement('canvas'); c.width = c.height = 96; const x = c.getContext('2d'); const d = x.createImageData(96, 96);
+  for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255 | 0; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 34; }
+  x.putImageData(d, 0, 0); document.documentElement.style.setProperty('--grain', `url(${c.toDataURL()})`);
 }
 
 // ---------- gesty na stosie ----------
@@ -247,8 +268,8 @@ stack.addEventListener('pointermove', (e) => {
     drag.v = 0.7 * drag.v + 0.3 * (-(e.clientY - drag.ly) / step / dt * 1000);
     drag.lt = now; drag.ly = e.clientY;
     S.pos = drag.p0 - drag.dy / step;
-    render();
-  } else if (drag.mode === 'h') render();
+    queueRender();
+  } else if (drag.mode === 'h') queueRender();
 });
 function endDrag(e) {
   if (e.pointerId !== drag.id) return;
@@ -681,7 +702,7 @@ if (window.Capacitor && plugin('App')) plugin('App').addListener('backButton', (
   plugin('App').exitApp();
 });
 document.body.classList.toggle('film', S.set.film);
-measure(); fitFx(); cornerPixels();
+measure(); fitFx(); cornerPixels(); makeGrain();
 loadData();
 setTimeout(() => checkUpdate(false), 4000);
 if (S.launches <= 3) {
