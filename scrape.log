@@ -1,0 +1,40 @@
+Reserved algolia PRODUCT_RES_PL_PL
+  facet SALE: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  typ ceny: trafień 15253, pobrano 4000, przecenionych 637, nowych 637
+  clearance: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  special: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  promotion: trafień 5752, pobrano 3786, przecenionych 3786, nowych 3149
+  Reserved: 3786 rzeczy (typ ceny, promotion)
+Cropp algolia PRODUCT_CRO_PL_PL
+  facet SALE: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  typ ceny: trafień 4380, pobrano 2000, przecenionych 0, nowych 0
+  clearance: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  special: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  promotion: trafień 1962, pobrano 1785, przecenionych 1785, nowych 1785
+  Cropp: 1785 rzeczy (promotion)
+House algolia PRODUCT_HOU_PL_PL
+  facet SALE: trafień 4, pobrano 4, przecenionych 2, nowych 2
+  typ ceny: trafień 3405, pobrano 2001, przecenionych 472, nowych 472
+  clearance: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  special: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  promotion: trafień 827, pobrano 827, przecenionych 827, nowych 353
+  House: 827 rzeczy (facet SALE, typ ceny, promotion)
+Mohito algolia PRODUCT_MOH_PL_PL
+  facet SALE: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  typ ceny: trafień 3439, pobrano 1003, przecenionych 5, nowych 5
+  clearance: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  special: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  promotion: trafień 1827, pobrano 1003, przecenionych 1003, nowych 998
+  Mohito: 1003 rzeczy (typ ceny, promotion)
+Sinsay algolia PRODUCT_SIN_PL_PL
+  facet SALE: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  typ ceny: trafień 53322, pobrano 8051, przecenionych 743, nowych 743
+  clearance: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  special: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  promotion: trafień 11024, pobrano 5743, przecenionych 5743, nowych 5000
+  Sinsay: 4744 rzeczy (typ ceny, promotion)
+zara BŁĄD Expecting value: line 1 column 1 (char 0)
+  CCC: 2250 (stron 91)
+dostępność: sprawdzono 4500, dostępne 4389, wyprzedane 110, błędów 0
+po odrzuceniu wyprzedanych: 14456 z 14614
+RAZEM 14456 {'reserved': 3786, 'cropp': 1785, 'house': 827, 'mohito': 1003, 'sinsay': 4744, 'zara': 'błąd: Expecting value: line 1 column 1 (char 0)', 'ccc': 2250}

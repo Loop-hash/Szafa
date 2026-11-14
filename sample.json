@@ -1,0 +1,103 @@
+[
+ {
+  "id": "reserved:217MD-89X",
+  "shop": "reserved",
+  "brand": "Reserved",
+  "name": "Bluzka z falbanami",
+  "url": "https://www.reserved.com/pl/pl/bluzka-z-falbanami-217md-89x",
+  "img": [
+   "https://static.reserved.com/media/catalog/product/cache/850/a4e40ebdc3e371adff845072e1c73f37/2/1/217MD-89X-050-1-1328334.jpg"
+  ],
+  "price": 89.99,
+  "old": 139.99,
+  "low30": 139.99,
+  "sex": "k",
+  "cat": "koszulki",
+  "sizes": [
+   "XS",
+   "S",
+   "M",
+   "L",
+   "XL",
+   "XXL"
+  ],
+  "color": "brązowy",
+  "low": false,
+  "chk": "2026-11-13",
+  "first": "2026-11-09",
+  "min": 89.99,
+  "hist": [
+   [
+    "2026-11-09",
+    89.99
+   ]
+  ]
+ },
+ {
+  "id": "reserved:217MD-49X",
+  "shop": "reserved",
+  "brand": "Reserved",
+  "name": "Bluzka z falbanami",
+  "url": "https://www.reserved.com/pl/pl/bluzka-z-falbanami-217md-49x",
+  "img": [
+   "https://static.reserved.com/media/catalog/product/cache/850/a4e40ebdc3e371adff845072e1c73f37/2/1/217MD-49X-050-1-1328053.jpg"
+  ],
+  "price": 89.99,
+  "old": 139.99,
+  "low30": 139.99,
+  "sex": "k",
+  "cat": "koszulki",
+  "sizes": [
+   "XS",
+   "S",
+   "M",
+   "L",
+   "XL",
+   "XXL"
+  ],
+  "color": "fioletowy",
+  "low": false,
+  "chk": "2026-11-13",
+  "first": "2026-11-09",
+  "min": 89.99,
+  "hist": [
+   [
+    "2026-11-09",
+    89.99
+   ]
+  ]
+ },
+ {
+  "id": "reserved:576KS-30X",
+  "shop": "reserved",
+  "brand": "Reserved",
+  "name": "Bawełniana koszula z drapowaniem",
+  "url": "https://www.reserved.com/pl/pl/bawelniana-koszula-z-drapowaniem-576ks-30x",
+  "img": [
+   "https://static.reserved.com/media/catalog/product/cache/850/a4e40ebdc3e371adff845072e1c73f37/5/7/576KS-30X-002-1-1320006.jpg"
+  ],
+  "price": 49.99,
+  "old": 109.99,
+  "low30": 59.99,
+  "sex": "k",
+  "cat": "koszule",
+  "sizes": [
+   "XS",
+   "S",
+   "M",
+   "L",
+   "XL"
+  ],
+  "color": "różowy",
+  "low": false,
+  "chk": "2026-11-13",
+  "first": "2026-11-09",
+  "min": 49.99,
+  "hist": [
+   [
+    "2026-11-09",
+    49.99
+   ]
+  ]
+ }
+]
