@@ -1,0 +1,43 @@
+Reserved algolia PRODUCT_RES_PL_PL
+  facet SALE: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  typ ceny: trafień 17586, pobrano 4000, przecenionych 521, nowych 521
+  clearance: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  special: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  promotion: trafień 7902, pobrano 3490, przecenionych 3490, nowych 2969
+  Reserved: 3490 rzeczy (typ ceny, promotion)
+Cropp algolia PRODUCT_CRO_PL_PL
+  facet SALE: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  typ ceny: trafień 4292, pobrano 2000, przecenionych 0, nowych 0
+  clearance: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  special: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  promotion: trafień 1848, pobrano 1739, przecenionych 1739, nowych 1739
+  Cropp: 1739 rzeczy (promotion)
+House algolia PRODUCT_HOU_PL_PL
+  facet SALE: trafień 4, pobrano 4, przecenionych 2, nowych 2
+  typ ceny: trafień 3733, pobrano 2001, przecenionych 443, nowych 443
+  clearance: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  special: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  promotion: trafień 1030, pobrano 1030, przecenionych 1030, nowych 585
+  House: 1030 rzeczy (facet SALE, typ ceny, promotion)
+Mohito algolia PRODUCT_MOH_PL_PL
+  facet SALE: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  typ ceny: trafień 3468, pobrano 1001, przecenionych 3, nowych 3
+  clearance: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  special: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  promotion: trafień 1741, pobrano 1001, przecenionych 1001, nowych 998
+  Mohito: 1001 rzeczy (typ ceny, promotion)
+Sinsay algolia PRODUCT_SIN_PL_PL
+  facet SALE: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  typ ceny: trafień 59745, pobrano 8532, przecenionych 739, nowych 739
+  clearance: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  special: trafień 0, pobrano 0, przecenionych 0, nowych 0
+  promotion: trafień 10320, pobrano 5739, przecenionych 5739, nowych 5000
+  Sinsay: 4742 rzeczy (typ ceny, promotion)
+  zara kat 2436823 status 200 + 93
+  zara kat 2419724 status 200 + 141
+  zara kat 2419737 status 200 + 141
+  Zara: 375
+  CCC: 2250 (stron 92)
+dostępność: sprawdzono 4500, dostępne 4240, wyprzedane 259, błędów 0
+po odrzuceniu wyprzedanych: 14161 z 14486
+RAZEM 14161 {'reserved': 3490, 'cropp': 1739, 'house': 1030, 'mohito': 1001, 'sinsay': 4742, 'zara': 375, 'ccc': 2250}
